@@ -1,12 +1,13 @@
 const BASE = "https://app.ambiguous.ai";
 
-// Each object is its own Ambiguous agent; sending with its key sends from its own address.
-function agentKey(objectId: string) {
-  return process.env[`AMBIGUOUS_AGENT_KEY_${objectId.toUpperCase()}`];
+// Built-in objects are their own Ambiguous agents, so mail comes from their own address.
+// Owner-created scannables have no identity of their own and send with the workspace key.
+function senderKey(objectId: string) {
+  return process.env[`AMBIGUOUS_AGENT_KEY_${objectId.toUpperCase()}`] || process.env.AMBIGUOUS_API_KEY;
 }
 
 export async function sendFromObject(objectId: string, to: string, subject: string, body: string) {
-  const key = agentKey(objectId);
+  const key = senderKey(objectId);
   if (!key) {
     console.log(`[ambiguous stub] ${objectId} -> ${to}: ${subject}\n${body}`);
     return { ok: true, stub: true };

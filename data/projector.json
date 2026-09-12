@@ -1,0 +1,13 @@
+{
+  "facts": [
+    "HDMI 1 has been flaky since August, so use HDMI 2",
+    "Lamp hours: 2,140 of 4,000 rated",
+    "Last cleaned 3 weeks ago"
+  ],
+  "log": [
+    {
+      "at": "2026-09-08T09:15:00.000Z",
+      "event": "Emailed facilities: HDMI 1 flickers during presentations"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+{
+  "facts": [
+    "Screen remote has been missing since last Thursday",
+    "The HDMI cable is short, so sit near the screen",
+    "Whiteboard markers are dry"
+  ],
+  "log": [
+    {
+      "at": "2026-09-10T16:05:00.000Z",
+      "event": "Visitor reported the screen remote missing"
+    }
+  ]
+}

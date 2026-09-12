@@ -1,0 +1,13 @@
+{
+  "facts": [
+    "Bean hopper is at about 20%",
+    "Descale is due next week",
+    "Someone keeps selecting espresso when they want a lungo"
+  ],
+  "log": [
+    {
+      "at": "2026-08-29T07:40:00.000Z",
+      "event": "Descaled by facilities"
+    }
+  ]
+}
