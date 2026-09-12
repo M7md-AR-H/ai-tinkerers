@@ -98,9 +98,9 @@ Pass: it prints `{ ok: true, id: … }` and an email arrives from `lobby.coffee.
 **E. Voice:** on any agent page tap **Talk**, then the mic, and allow microphone access. Say "What's wrong with you?" You should see a live transcript and hear a spoken answer. Tap again to stop.
 
 **F. Owner dashboard:** go to `/` and log in; you land on `/dashboard`.
-1. Tap **+**, name it "Lobby Printer", upload a `.txt` or `.md` describing it, and choose **Create**.
-2. Open **⋯**, then **Share**. You get a QR code and a link. Open the link and ask something that's in your file.
-3. Say "your info is wrong: …" → the owner email arrives (`ADMIN_EMAIL`, or else `DEMO_EMAIL`).
+1. Tap **+**, name it "Lobby Printer", upload a `.txt` or `.md` describing it, and choose **Create**. It appears with its own email address in the **Inbox** column.
+2. Open **⋯**, then **Share**. You get a QR code, a link and its inbox address. Open the link and ask something that's in your file.
+3. Say "your info is wrong: …" → the owner email arrives (`ADMIN_EMAIL`, or else `DEMO_EMAIL`) **from the agent's own address**.
 4. Try Edit and Delete.
 
 **G. Photo → agent:** on the dashboard tap **From photo**, take or choose a photo of something, and tap **Analyze photo**. It names the object and asks a few questions. Answer some, then tap **Create agent**. The share QR opens. Scan it, and the new agent answers from what it saw and what you told it.
@@ -152,3 +152,4 @@ Pass: it prints `{ ok: true, id: … }` and an email arrives from `lobby.coffee.
 | An email result shows `stub: true` | Neither the object's key nor `AMBIGUOUS_API_KEY` is set. |
 | Photo → agent: "Please use a JPEG, PNG or WebP photo" | Take the photo with the camera, or convert HEIC first. |
 | Tunnel requests blocked in dev | The tunnel domain must match `allowedDevOrigins` in `next.config.ts` (trycloudflare and ngrok are included). |
+| A new agent's Inbox column says "workspace" | Creating its Ambiguous identity failed. Look for `[ambiguous] provisioning` in terminal 1. The agent still works and emails from the workspace address. |

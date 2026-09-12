@@ -7,6 +7,7 @@ export type ScannableRow = {
   name: string;
   knowledgeFileName?: string;
   knowledgeContentType?: string;
+  ambiguousEmail?: string;
   hasText: boolean;
   fileUrl: string | null;
 };
@@ -16,6 +17,7 @@ export type Knowledge = {
   knowledgeText?: string;
   knowledgeFileName?: string;
   knowledgeContentType?: string;
+  ambiguousEmail?: string;
 };
 
 function client() {
@@ -49,6 +51,10 @@ export async function listScannables(auth0Id: string): Promise<ScannableRow[]> {
 
 export async function getKnowledge(id: string): Promise<Knowledge | null> {
   return client().query(anyApi.scannables.getKnowledge, { id });
+}
+
+export async function getScannableSender(id: string): Promise<{ key: string; email: string } | null> {
+  return client().query(anyApi.scannables.getSender, { secret: secret(), id });
 }
 
 export async function scannableMutation(

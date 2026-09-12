@@ -15,5 +15,8 @@ export default defineSchema({
     knowledgeFileName: v.optional(v.string()),
     knowledgeContentType: v.optional(v.string()),
     knowledgeText: v.optional(v.string()),
+    // The agent's own Ambiguous identity. The key is only returned by the server-gated getSender query.
+    ambiguousEmail: v.optional(v.string()),
+    ambiguousKey: v.optional(v.string()),
   }).index("by_owner", ["ownerId"]),
 });

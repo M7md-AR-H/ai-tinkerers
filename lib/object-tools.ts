@@ -5,6 +5,7 @@ import { lookupManual } from "./exa";
 import { sendFromObject } from "./ambiguous";
 import { scheduleMaintenance } from "./scheduler";
 import { getUser } from "./auth";
+import { getScannableSender } from "./convex-server";
 
 const clip = (s: unknown, n: number) => String(s ?? "").trim().slice(0, n);
 const clampInt = (v: unknown, min: number, max: number) =>
@@ -32,11 +33,13 @@ export async function runTool(
     const base = (process.env.PUBLIC_URL || process.env.APP_BASE_URL || "").replace(/\/$/, "");
     const summary = clip(a.summary, 2000);
     const kind = String(a.kind);
+    const sender = ctx.kind === "scannable" ? await getScannableSender(ctx.id).catch(() => null) : null;
     const res = await sendFromObject(
       ctx.id,
       to,
       `[${ctx.name}] ${kind.replace("_", " ")}: ${clip(summary, 80)}`,
-      `**${ctx.name}**, visitor report via ${channel}\n\n**Type:** ${kind}\n\n${summary}${base ? `\n\nOpen: ${base}/agents/${ctx.id}` : ""}`
+      `**${ctx.name}**, visitor report via ${channel}\n\n**Type:** ${kind}\n\n${summary}${base ? `\n\nOpen: ${base}/agents/${ctx.id}` : ""}`,
+      sender?.key
     );
     return res.ok ? "Your owner has been notified." : `I couldn't notify my owner (${res.error}).`;
   }

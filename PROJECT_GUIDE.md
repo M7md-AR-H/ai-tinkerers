@@ -29,7 +29,7 @@ This app merges two plans. **Part A** is the owner platform: dashboard, Convex, 
 | Defined in | [lib/objects.ts](lib/objects.ts) | Convex `scannables` table |
 | What it knows | Persona, model number, plus **memory** in `DATA_DIR/<id>.json` (facts + last 20 events, seeded in `data/`) | The uploaded `.txt`/`.md` (up to 60k characters used), or Markdown generated from a photo |
 | Tools | `remember`, `lookup_manual`, `report_issue`, `schedule_maintenance`, `order_supplies` (only where `canSpend`, i.e. the coffee machine) | `notify_admin` |
-| Emails from | **Its own Ambiguous address** | The Ambiguous workspace address |
+| Emails from | **Its own Ambiguous address** | **Its own Ambiguous address**, created when the agent is created (the workspace address if that fails) |
 | Page extras | Facts panel, live event log (refreshes every 5 s), Staff login | – |
 
 ## 4. Architecture
@@ -140,7 +140,7 @@ data/*.json                      Seeded memories (committed on purpose)
 Dashboard **+** → a name and a `.txt`/`.md`/`.pdf`. The browser reads the text for `.txt`/`.md`, gets an upload URL through a server action, uploads the file straight to Convex storage, then `createScannable` saves it. PDFs are stored but not read.
 
 ### 6.6 Owner: create from a photo
-Dashboard **From photo** → the photo is shrunk to 1024 px JPEG in the browser (server actions take about 1 MB) → `analyzePhoto` (GPT-4.1-mini vision, JSON mode) returns the object type, a suggested name, brand/model if visible, observations and 3–5 questions → the owner answers → `writeKnowledge` turns everything into a Markdown knowledge file without inventing specifics → the server uploads it to Convex and creates the agent → the share QR opens.
+Dashboard **From photo** → the photo is shrunk to 1024 px JPEG in the browser (server actions take about 1 MB) → `analyzePhoto` (GPT-4.1-mini vision, JSON mode) returns the object type, a suggested name, brand/model if visible, observations and 3–5 questions → the owner answers → `writeKnowledge` turns everything into a Markdown knowledge file without inventing specifics → the server uploads it to Convex, gives the agent its own Ambiguous inbox (`provisionAgent`), and creates it → the share QR opens, showing the new address. Agents created from a file get their inbox the same way.
 
 ### 6.7 The 45-second demo
 `/auth/demo?id=coffee&task=descale` writes "Booked my own descale" now and starts `maintenance-due` with `delay: "45s"`. The page's auto-refresh shows "Maintenance due: descale" when it lands, and the reminder email arrives from the coffee machine.
@@ -151,6 +151,7 @@ Dashboard **From photo** → the photo is shrunk to 1024 px JPEG in the browser 
 - **Visitors are anonymous.** `getById`/`getKnowledge` are public on purpose; don't put secrets in knowledge files.
 - **Spending** is checked on the server at the moment the tool runs, not only in the prompt.
 - **Inputs are bounded:** tool arguments are validated and clamped; memory file names only allow `[a-z0-9-]`; the demo route only accepts known object ids; photos must be image data URLs under 3 MB.
+- **Agent inbox keys** for dashboard-made agents live in Convex and are only returned by the secret-gated `getSender` query. The public queries never include them.
 - **Secrets:** the OpenAI key stays on the server (voice uses ephemeral keys); `.env.local` is gitignored.
 
 ## 8. Known gotchas

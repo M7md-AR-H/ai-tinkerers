@@ -3,6 +3,7 @@
 import { auth0 } from "@/lib/auth0";
 import { scannableMutation } from "@/lib/convex-server";
 import { analyzePhoto, PhotoAnalysis, writeKnowledge } from "@/lib/photo-agent";
+import { provisionAgent } from "@/lib/ambiguous";
 
 export type FileInput = { fileId: string; fileName: string; contentType: string; text?: string };
 export type KnowledgeChange = { mode: "keep" } | { mode: "clear" } | ({ mode: "replace" } & FileInput);
@@ -22,6 +23,12 @@ async function attempt<T extends object>(fn: () => Promise<T>): Promise<Result<T
   }
 }
 
+// Each new agent gets its own Ambiguous inbox; if that fails it's still created and uses the workspace address.
+async function identityFor(name: string) {
+  const identity = await provisionAgent(name);
+  return identity ? { key: identity.apiKey, email: identity.email } : undefined;
+}
+
 export async function getUploadUrl() {
   return attempt(async () => {
     await ownerSub();
@@ -31,8 +38,11 @@ export async function getUploadUrl() {
 
 export async function createScannable(name: string, file: FileInput) {
   return attempt(async () => {
-    await scannableMutation("create", { auth0Id: await ownerSub(), name, file });
-    return {};
+    const auth0Id = await ownerSub();
+    if (!name.trim()) throw new Error("Give it a name.");
+    const ambiguous = await identityFor(name.trim());
+    await scannableMutation("create", { auth0Id, name, file, ambiguous });
+    return { email: ambiguous?.email ?? null };
   });
 }
 
@@ -75,12 +85,14 @@ export async function createFromPhotoAction(
     if (!upload.ok) throw new Error("Could not store the knowledge file.");
     const { storageId } = (await upload.json()) as { storageId: string };
 
+    const ambiguous = await identityFor(cleanName);
     const slug = cleanName.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "agent";
     const id = (await scannableMutation("create", {
       auth0Id,
       name: cleanName,
       file: { fileId: storageId, fileName: `${slug}.md`, contentType: "text/markdown", text: knowledge },
+      ambiguous,
     })) as string;
-    return { id, name: cleanName };
+    return { id, name: cleanName, email: ambiguous?.email ?? null };
   });
 }

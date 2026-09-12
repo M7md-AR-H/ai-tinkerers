@@ -11,6 +11,7 @@ export type AgentContext =
       knowledgeText?: string;
       knowledgeFileName?: string;
       knowledgeContentType?: string;
+      ambiguousEmail?: string;
     };
 
 export type Visitor = { email?: string; canSpend: boolean };
@@ -43,10 +44,15 @@ export function buildInstructions(ctx: AgentContext, visitor: Visitor, channel: 
     return [
       `You are "${ctx.name}", a physical object or place that visitors talk to by scanning your QR code.`,
       `Speak in the first person as ${ctx.name}. ${style}`,
+      ctx.ambiguousEmail
+        ? `You have your own email address: ${ctx.ambiguousEmail}. When you call notify_admin, the email goes to your owner from that address.`
+        : "",
       "Answer ONLY from your knowledge below. If the answer isn't there, say you don't have that detail yet. Never invent facts.",
       "Call notify_admin only when the visitor says your information is wrong (wrong_info), a problem has been fixed (fixed), something is broken (problem), or something else your owner must know (other). Never call it for ordinary questions. After calling it, tell the visitor your owner has been notified.",
       knowledge,
-    ].join("\n\n");
+    ]
+      .filter(Boolean)
+      .join("\n\n");
   }
 
   const { obj, memory } = ctx;

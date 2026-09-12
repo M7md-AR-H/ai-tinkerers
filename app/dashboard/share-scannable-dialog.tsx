@@ -9,7 +9,7 @@ export default function ShareScannableDialog({
   publicUrl,
   onClose,
 }: {
-  target: { id: string; name: string } | null;
+  target: { id: string; name: string; email?: string | null } | null;
   publicUrl: string;
   onClose: () => void;
 }) {
@@ -32,9 +32,14 @@ export default function ShareScannableDialog({
         </div>
         <p className="text-2xl font-semibold">Talk to me</p>
         <p className="break-all text-center text-xs text-zinc-500">{url}</p>
+        {target.email && (
+          <p className="text-center text-sm">
+            My inbox: <span className="font-mono">{target.email}</span>
+          </p>
+        )}
         {!publicUrl && (
           <p className="text-center text-xs text-amber-700">
-            Set PUBLIC_URL to your tunnel URL so phones can open this link.
+            {/* Set PUBLIC_URL to your tunnel URL so phones can open this link. */}
           </p>
         )}
         <div className="flex flex-wrap justify-center gap-2">

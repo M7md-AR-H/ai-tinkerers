@@ -9,6 +9,7 @@ import ShareScannableDialog from "./share-scannable-dialog";
 import DeleteScannableDialog from "./delete-scannable-dialog";
 
 type Builtin = { id: string; name: string; location: string; facts: number; lastEvent: { at: string; event: string } | null };
+type ShareTarget = { id: string; name: string; email?: string | null };
 
 type Props = {
   user: { name: string; email?: string; picture?: string };
@@ -42,7 +43,7 @@ export default function DashboardClient({ user, scannables, builtins, convexErro
   const [createOpen, setCreateOpen] = useState(false);
   const [photoOpen, setPhotoOpen] = useState(false);
   const [editing, setEditing] = useState<ScannableRow | null>(null);
-  const [sharing, setSharing] = useState<{ id: string; name: string } | null>(null);
+  const [sharing, setSharing] = useState<ShareTarget | null>(null);
   const [deleting, setDeleting] = useState<ScannableRow | null>(null);
   const [menuFor, setMenuFor] = useState<string | null>(null);
   const [userMenu, setUserMenu] = useState(false);
@@ -89,7 +90,7 @@ export default function DashboardClient({ user, scannables, builtins, convexErro
           <div className="mb-3 flex items-center justify-between">
             <div>
               <h1 className="text-xl font-semibold">Your scannables</h1>
-              <p className="text-sm text-zinc-500">Objects and places you&apos;ve given a voice.</p>
+              <p className="text-sm text-zinc-500">Objects and places you&apos;ve given a voice and an inbox.</p>
             </div>
             <div className="flex items-center gap-2">
               <button
@@ -124,6 +125,7 @@ export default function DashboardClient({ user, scannables, builtins, convexErro
                 <thead className="bg-zinc-50 text-left text-zinc-500">
                   <tr>
                     <th className="px-3 py-2 font-medium">Name</th>
+                    <th className="px-3 py-2 font-medium">Inbox</th>
                     <th className="px-3 py-2 font-medium">Knowledge</th>
                     <th className="w-12" />
                   </tr>
@@ -135,6 +137,13 @@ export default function DashboardClient({ user, scannables, builtins, convexErro
                         <Link href={`/agents/${s._id}`} className="font-medium hover:underline">
                           {s.name}
                         </Link>
+                      </td>
+                      <td className="px-3 py-2 text-xs">
+                        {s.ambiguousEmail ? (
+                          <span className="font-mono">{s.ambiguousEmail}</span>
+                        ) : (
+                          <span className="text-zinc-400">workspace</span>
+                        )}
                       </td>
                       <td className="px-3 py-2">
                         {s.fileUrl ? (
@@ -159,7 +168,7 @@ export default function DashboardClient({ user, scannables, builtins, convexErro
                         {menuFor === s._id && (
                           <div className="absolute right-3 z-10 mt-1 w-32 rounded-lg border border-zinc-200 bg-white py-1 shadow-lg">
                             <MenuItem onClick={() => { setEditing(s); setMenuFor(null); }}>Edit</MenuItem>
-                            <MenuItem onClick={() => { setSharing({ id: s._id, name: s.name }); setMenuFor(null); }}>Share</MenuItem>
+                            <MenuItem onClick={() => { setSharing({ id: s._id, name: s.name, email: s.ambiguousEmail }); setMenuFor(null); }}>Share</MenuItem>
                             <MenuItem danger onClick={() => { setDeleting(s); setMenuFor(null); }}>Delete</MenuItem>
                           </div>
                         )}

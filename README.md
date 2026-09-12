@@ -27,7 +27,7 @@ Anyone can also give their own things a voice. An owner signs in, snaps a photo 
 | **OpenRouter** | Primary chat model route (`openai/gpt-4.1-mini`), with automatic fallback to OpenAI on timeout, 429 or 5xx. |
 | **CopilotKit** | Chat UI and runtime. A `BuiltInAgent` is built per request for whichever object was scanned, with that object's tools. |
 | **Exa** | Objects read their own manuals: a model-specific search whose results the agent cites by source. |
-| **Ambiguous** | Each built-in object is its own Ambiguous agent **with its own email address** (`lobby.coffee.machine@…`). Fault reports, supply orders and maintenance reminders come from the object's own inbox. |
+| **Ambiguous** | Every object is its own Ambiguous agent **with its own email address**: the three built-ins (`lobby.coffee.machine@…`) and every agent created on the dashboard, which gets a fresh inbox the moment it's made. Fault reports, supply orders, maintenance reminders and owner alerts come from the object's own inbox. |
 | **Trigger.dev** | Objects schedule their own future. A delayed task fires days later, writes to the object's log, and emails from its inbox, with nobody logged in. |
 | **Auth0** | Owner accounts for the dashboard, and the staff allowlist that decides who may spend money on an object's behalf. |
 
@@ -55,7 +55,7 @@ Convex stores owner accounts, scannables and knowledge files.
 | Defined in | `lib/objects.ts` | Convex (`scannables` table), created on the dashboard |
 | Knowledge | Persona, model number, and memory in `data/<id>.json` (facts + last 20 events) | The uploaded `.txt`/`.md`, or the Markdown generated from a photo |
 | Tools | `remember`, `lookup_manual`, `report_issue`, `schedule_maintenance`, `order_supplies` (coffee only, staff only) | `notify_admin` |
-| Email identity | Its own Ambiguous address | The workspace address, to `ADMIN_EMAIL` |
+| Email identity | Its own Ambiguous address | Its own Ambiguous address, created automatically when the agent is made |
 
 ## How a visit works
 
@@ -136,7 +136,7 @@ proxy.ts                        Auth0 (Next.js 16 proxy)
 
 - PDFs are stored but not read; use `.txt`, `.md`, or the photo flow.
 - Knowledge of owner-made agents is public to anyone with the link (by design, since visitors have no accounts).
-- Owner alerts go to one inbox (`ADMIN_EMAIL`, falling back to `DEMO_EMAIL`), sent from the workspace address.
+- Owner alerts go to one inbox (`ADMIN_EMAIL`, falling back to `DEMO_EMAIL`), sent from each agent's own address. Deleting an agent doesn't remove its Ambiguous identity.
 - Voice needs HTTPS on phones (use the tunnel); `localhost` works on the laptop.
 - Built-in objects' memory lives in local JSON files; there's no deployment.
 

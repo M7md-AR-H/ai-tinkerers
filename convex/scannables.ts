@@ -63,15 +63,26 @@ export const generateUploadUrl = mutation({
 });
 
 export const create = mutation({
-  args: { secret: v.string(), auth0Id: v.string(), name: v.string(), file: v.object(fileFields) },
-  handler: async (ctx, { secret, auth0Id, name, file }) => {
+  args: {
+    secret: v.string(),
+    auth0Id: v.string(),
+    name: v.string(),
+    file: v.object(fileFields),
+    ambiguous: v.optional(v.object({ key: v.string(), email: v.string() })),
+  },
+  handler: async (ctx, { secret, auth0Id, name, file, ambiguous }) => {
     assertServer(secret);
     const owner = await ownerId(ctx, auth0Id);
     if (!name.trim()) throw new Error("Name is required");
     const fields = Object.fromEntries(
       Object.entries(knowledgeFields(file)).filter(([, value]) => value !== undefined)
     );
-    return await ctx.db.insert("scannables", { ownerId: owner, name: name.trim(), ...fields });
+    return await ctx.db.insert("scannables", {
+      ownerId: owner,
+      name: name.trim(),
+      ...fields,
+      ...(ambiguous ? { ambiguousKey: ambiguous.key, ambiguousEmail: ambiguous.email } : {}),
+    });
   },
 });
 
@@ -134,10 +145,23 @@ export const listByOwner = query({
         name: r.name,
         knowledgeFileName: r.knowledgeFileName,
         knowledgeContentType: r.knowledgeContentType,
+        ambiguousEmail: r.ambiguousEmail,
         hasText: !!r.knowledgeText,
         fileUrl: r.knowledgeFileId ? await ctx.storage.getUrl(r.knowledgeFileId as GenericId<"_storage">) : null,
       }))
     );
+  },
+});
+
+// Server-only: the agent's Ambiguous key, used to send mail as the agent.
+export const getSender = query({
+  args: { secret: v.string(), id: v.string() },
+  handler: async (ctx, { secret, id }) => {
+    assertServer(secret);
+    const sid = ctx.db.normalizeId("scannables", id);
+    const row = sid ? await ctx.db.get(sid) : null;
+    if (!row?.ambiguousKey) return null;
+    return { key: row.ambiguousKey as string, email: row.ambiguousEmail as string };
   },
 });
 
@@ -151,7 +175,7 @@ export const getById = query({
   },
 });
 
-// Public on purpose: the chat and voice agents need it for anonymous visitors.
+// Public on purpose: the chat and voice agents need it for anonymous visitors. Never return ambiguousKey here.
 export const getKnowledge = query({
   args: { id: v.string() },
   handler: async (ctx, { id }) => {
@@ -163,6 +187,7 @@ export const getKnowledge = query({
       knowledgeText: row.knowledgeText,
       knowledgeFileName: row.knowledgeFileName,
       knowledgeContentType: row.knowledgeContentType,
+      ambiguousEmail: row.ambiguousEmail,
     };
   },
 });

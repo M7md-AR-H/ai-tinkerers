@@ -24,7 +24,7 @@ export default function PhotoScannableDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  onCreated: (agent: { id: string; name: string }) => void;
+  onCreated: (agent: { id: string; name: string; email: string | null }) => void;
 }) {
   const router = useRouter();
   const [photo, setPhoto] = useState<string | null>(null);
@@ -67,7 +67,7 @@ export default function PhotoScannableDialog({
     setBusy(null);
     if (!res.ok) return setError(res.error);
     router.refresh();
-    onCreated({ id: res.id, name: res.name });
+    onCreated({ id: res.id, name: res.name, email: res.email });
   }
 
   const primary = "rounded-md bg-zinc-900 px-3 py-2 text-sm text-white disabled:opacity-50";
@@ -139,7 +139,7 @@ export default function PhotoScannableDialog({
                 Retake
               </button>
               <button onClick={create} disabled={!!busy || !name.trim()} className={primary}>
-                {busy === "creating" ? "Writing its knowledge…" : "Create agent"}
+                {busy === "creating" ? "Giving it a voice and an inbox…" : "Create agent"}
               </button>
             </div>
           </>
