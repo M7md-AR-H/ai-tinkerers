@@ -5,11 +5,21 @@ import {
   defineTool,
 } from "@copilotkit/runtime/v2";
 import { z } from "zod";
-import { buildInstructions } from "@/lib/agent-brain";
-import { sendAdminAlert } from "@/lib/ambiguous";
+import { handleVisitorReport } from "@/lib/admin-actions";
+import { buildInstructions, buildSuggestionInstructions } from "@/lib/agent-brain";
 import { SCANNABLE_HEADER } from "@/lib/constants";
 import { getScannableKnowledge } from "@/lib/convex-server";
+import { lookupProduct } from "@/lib/exa";
 import { createChatModel } from "@/lib/llm";
+
+/** CopilotKit's follow-up-suggestion engine hits `/agent/<id>/suggest`. */
+function isSuggestionRequest(request: Request) {
+  try {
+    return new URL(request.url).pathname.replace(/\/$/, "").endsWith("/suggest");
+  } catch {
+    return false;
+  }
+}
 
 const runtime = new CopilotRuntime({
   // Per-request agent: the chat page tells us which scannable it is via a header,
@@ -28,10 +38,25 @@ const runtime = new CopilotRuntime({
       };
     }
 
+    // Follow-up buttons: a separate, cheaper brain with no side-effect tools.
+    // It is forced to answer through the client-provided `copilotkitSuggest` tool.
+    if (isSuggestionRequest(request)) {
+      return {
+        default: new BuiltInAgent({
+          model: createChatModel(),
+          prompt: buildSuggestionInstructions(scannable),
+          toolChoice: { type: "tool", toolName: "copilotkitSuggest" },
+          maxSteps: 1,
+          maxOutputTokens: 300,
+          temperature: 0.7,
+        }),
+      };
+    }
+
     const notifyAdmin = defineTool({
       name: "notify_admin",
       description:
-        "Email the owner/admin when the visitor reveals that the knowledge base is wrong or outdated, that a problem has been fixed, that there is a new problem, or anything else the owner must know. Do not use for ordinary questions.",
+        "Tell the owner/admin when the visitor reveals that the knowledge base is wrong or outdated, that a problem has been fixed, that there is a new problem, or anything else the owner must know. Files or updates a task on the owner's board and emails them. Do not use for ordinary questions.",
       parameters: z.object({
         kind: z
           .enum(["wrong_info", "fixed", "problem", "other"])
@@ -46,7 +71,7 @@ const runtime = new CopilotRuntime({
           .describe("Optional extra context, e.g. which knowledge-base line is wrong and what it should say."),
       }),
       execute: async ({ kind, summary, details }) => {
-        const result = await sendAdminAlert({
+        const outcome = await handleVisitorReport({
           kind,
           summary,
           details,
@@ -54,14 +79,55 @@ const runtime = new CopilotRuntime({
           scannableName: scannable.name,
           channel: "chat",
         });
-        return result.ok
-          ? { status: "sent", message: "The owner has been emailed." }
-          : {
-              status: "failed",
-              message:
-                "Emailing the owner failed. Tell the visitor you could not reach the owner right now and that they should tell a human directly.",
-              error: result.error,
-            };
+        const reached = outcome.emailed || outcome.taskAction !== "none";
+        return {
+          status: reached ? "sent" : "failed",
+          taskAction: outcome.taskAction,
+          taskKey: outcome.taskKey,
+          taskUrl: outcome.taskUrl,
+          emailed: outcome.emailed,
+          message: reached
+            ? `Tell the visitor: ${outcome.visitorMessage}`
+            : "Reaching the owner failed. Tell the visitor you could not reach the owner right now and that they should tell a human directly.",
+          error: outcome.emailError ?? outcome.taskError,
+        };
+      },
+    });
+
+    const lookup = defineTool({
+      name: "lookup_product",
+      description:
+        "Search the web (via Exa) for public information about the product/brand/model this object is, or about a product, model or serial number the visitor mentions: manuals, specs, how-to steps, error codes, compatible parts, recalls. Never for private/local facts (this building, owner, Wi-Fi, prices).",
+      parameters: z.object({
+        identifier: z
+          .string()
+          .optional()
+          .describe("Most specific product identifier available: model number, product name, or brand + model. Omit if none."),
+        question: z
+          .string()
+          .min(3)
+          .describe("What the visitor wants to know, as a short natural-language question."),
+      }),
+      execute: async ({ identifier, question }) => {
+        const result = await lookupProduct({
+          scannableName: scannable.name,
+          identifier,
+          question,
+        });
+        if (!result.ok) {
+          return {
+            status: "failed",
+            error: result.error,
+            message: "The web lookup failed. Tell the visitor you could not check online right now.",
+          };
+        }
+        return {
+          status: "ok",
+          answer: result.answer,
+          sources: result.sources,
+          message:
+            "Summarise `answer` in your own words, say it comes from the web, and mention at most two source names. Do not read out URLs.",
+        };
       },
     });
 
@@ -69,8 +135,8 @@ const runtime = new CopilotRuntime({
       default: new BuiltInAgent({
         model: createChatModel(),
         prompt: buildInstructions(scannable),
-        tools: [notifyAdmin],
-        maxSteps: 4,
+        tools: [notifyAdmin, lookup],
+        maxSteps: 5,
       }),
     };
   },

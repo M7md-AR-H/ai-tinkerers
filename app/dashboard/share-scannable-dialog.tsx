@@ -61,16 +61,30 @@ export function ShareScannableDialog({
   scannableId: Id<"scannables">;
   onClose: () => void;
 }) {
+  if (!open) {
+    return null;
+  }
+
+  // Mounts fresh each time the dialog opens, so `copied` resets without an effect.
+  return (
+    <ShareScannablePanel name={name} scannableId={scannableId} onClose={onClose} />
+  );
+}
+
+function ShareScannablePanel({
+  name,
+  scannableId,
+  onClose,
+}: {
+  name: string;
+  scannableId: Id<"scannables">;
+  onClose: () => void;
+}) {
   const titleId = useId();
   const [copied, setCopied] = useState(false);
-  const url = open ? agentAbsoluteUrl(scannableId) : "";
+  const url = agentAbsoluteUrl(scannableId);
 
   useEffect(() => {
-    if (!open) {
-      setCopied(false);
-      return;
-    }
-
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape") {
         onClose();
@@ -79,11 +93,7 @@ export function ShareScannableDialog({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose]);
-
-  if (!open) {
-    return null;
-  }
+  }, [onClose]);
 
   async function copyLink() {
     try {
@@ -118,14 +128,14 @@ export function ShareScannableDialog({
       <button
         type="button"
         aria-label="Close dialog"
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-black/60"
         onClick={onClose}
       />
       <div
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 w-full max-w-sm rounded-2xl border border-black/[.08] bg-white p-6 shadow-xl dark:border-white/[.145] dark:bg-zinc-950"
+        className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-[0_24px_80px_rgba(0,0,0,0.5)]"
       >
         <h2 id={titleId} className="text-lg font-semibold tracking-tight">
           {name}
@@ -141,15 +151,15 @@ export function ShareScannableDialog({
             />
           </div>
         </div>
-        <div className="mt-4 flex items-center gap-2 rounded-xl border border-black/[.08] px-3 dark:border-white/[.145]">
-          <p className="min-w-0 flex-1 truncate py-3 text-xs text-zinc-700 dark:text-zinc-300">
+        <div className="mt-4 flex items-center gap-2 rounded-xl border border-border bg-background px-3">
+          <p className="min-w-0 flex-1 truncate py-3 text-xs text-zinc-300">
             {url}
           </p>
           <button
             type="button"
             aria-label={copied ? "Link copied" : "Copy link"}
             onClick={copyLink}
-            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-600 hover:bg-black/[.04] dark:text-zinc-300 dark:hover:bg-white/[.06]"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-muted hover:bg-white/[0.06] hover:text-foreground"
           >
             {copied ? <CheckIcon /> : <CopyIcon />}
           </button>
@@ -159,14 +169,14 @@ export function ShareScannableDialog({
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex h-11 items-center justify-center rounded-full border border-black/[.08] text-sm font-medium hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-white/[.06]"
+            className="flex h-11 items-center justify-center rounded-xl border border-border text-sm font-medium hover:bg-white/[0.05]"
           >
             Open link
           </a>
           <button
             type="button"
             onClick={shareLink}
-            className="flex h-11 items-center justify-center rounded-full bg-foreground text-sm font-medium text-background"
+            className="flex h-11 items-center justify-center rounded-xl bg-white text-sm font-medium text-[#17171a]"
           >
             Share
           </button>

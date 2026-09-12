@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { sendAdminAlert } from "@/lib/ambiguous";
+import { handleVisitorReport } from "@/lib/admin-actions";
 import { getScannableKnowledge } from "@/lib/convex-server";
 
 const bodySchema = z.object({
@@ -11,7 +11,7 @@ const bodySchema = z.object({
 
 /**
  * Used by the voice (Talk) agent, whose tools run in the browser.
- * The chat agent calls sendAdminAlert directly inside the CopilotKit runtime.
+ * The chat agent calls handleVisitorReport directly inside the CopilotKit runtime.
  */
 export async function POST(request: Request) {
   const parsed = bodySchema.safeParse(await request.json().catch(() => null));
@@ -25,7 +25,7 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: "Agent not found" }, { status: 404 });
   }
 
-  const result = await sendAdminAlert({
+  const outcome = await handleVisitorReport({
     kind,
     summary,
     details,
@@ -34,5 +34,17 @@ export async function POST(request: Request) {
     channel: "voice",
   });
 
-  return Response.json(result, { status: result.ok ? 200 : 502 });
+  const ok = outcome.emailed || outcome.taskAction !== "none";
+  return Response.json(
+    {
+      ok,
+      message: outcome.visitorMessage,
+      taskAction: outcome.taskAction,
+      taskKey: outcome.taskKey,
+      taskUrl: outcome.taskUrl,
+      emailed: outcome.emailed,
+      error: ok ? undefined : (outcome.emailError ?? outcome.taskError ?? "Could not reach the owner"),
+    },
+    { status: ok ? 200 : 502 },
+  );
 }

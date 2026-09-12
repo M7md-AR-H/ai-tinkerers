@@ -12,7 +12,8 @@ Turn a physical object or place into a scannable agent. You create the agent in 
 | Agent | `/agents/[id]` | Anyone with the link or QR | Talk (voice) or Chat (text) as that object. No login. |
 | CopilotKit | `/api/copilotkit` | Agent chat page | Server-side text brain for Chat mode. |
 | Realtime session | `/api/realtime/session` | Agent talk page | Mints a short-lived OpenAI Realtime key for WebRTC voice. |
-| Admin notify | `/api/notify-admin` | Agent talk page | Emails the owner when voice mode calls `notify_admin`. |
+| Admin notify | `/api/notify-admin` | Agent talk page | Voice-mode `notify_admin`: triages against open Ambiguous tasks, creates/comments/resolves one, then emails the owner. |
+| Product lookup | `/api/lookup` | Agent talk page | Voice-mode `lookup_product`: Exa web answer + sources. Chat calls Exa inside the CopilotKit runtime. |
 
 ## How a visit works
 
@@ -234,7 +235,7 @@ Callback and logout URLs should include `{APP_BASE_URL}/auth/callback` and `{APP
 - **Knowledge is public** to anyone who has the agent id. `getKnowledge` is intentionally unauthenticated.
 - **Admin mail is one inbox** (`ADMIN_EMAIL`), not per-owner.
 - **`lib/objects.ts` is unused.** Old hardcoded projector / coffee / room demos. Live agents come from Convex.
-- **`EXA_API_KEY` and `TRIGGER_SECRET_KEY`** may appear in a local env file; nothing in this repo reads them.
+- **`EXA_API_KEY`** powers the `lookup_product` tool (web lookups via Exa `/answer`); without it the tool reports a failure and the agent says it can't check online. **`TRIGGER_SECRET_KEY`** may appear in a local env file; nothing reads it.
 
 ## Stack
 

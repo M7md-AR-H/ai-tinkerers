@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { auth0 } from "@/lib/auth0";
+import { AppHeader } from "./components/brand";
 
 export default async function Home() {
   const session = await auth0.getSession();
@@ -9,27 +10,33 @@ export default async function Home() {
   }
 
   return (
-    <div className="flex flex-1 items-center justify-center px-6">
-      <main className="flex w-full max-w-sm flex-col items-center gap-8 text-center">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">AI Tinkerers</h1>
-          <p className="text-zinc-600 dark:text-zinc-400">
-            Sign in to continue to your dashboard.
+    <div className="flex flex-1 flex-col">
+      <AppHeader />
+      <main className="flex flex-1 items-center justify-center px-6 py-16">
+        <div className="w-full max-w-[400px] rounded-2xl border border-white/[0.1] bg-[#222226] p-8 shadow-[0_24px_80px_rgba(0,0,0,0.45)]">
+          <p className="text-[11px] font-medium uppercase tracking-[0.18em] text-muted">
+            Welcome
           </p>
-        </div>
-        <div className="flex w-full flex-col gap-3">
-          <a
-            href="/auth/login"
-            className="flex h-12 items-center justify-center rounded-full bg-foreground px-5 font-medium text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc]"
-          >
-            Log in
-          </a>
-          <a
-            href="/auth/login?screen_hint=signup"
-            className="flex h-12 items-center justify-center rounded-full border border-solid border-black/[.08] px-5 font-medium transition-colors hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a]"
-          >
-            Sign up
-          </a>
+          <h1 className="mt-2 text-2xl font-semibold tracking-tight">
+            Sign in to scannable
+          </h1>
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Continue to your agents dashboard.
+          </p>
+          <div className="mt-8 flex flex-col gap-3">
+            <a
+              href="/auth/login"
+              className="flex h-11 items-center justify-center rounded-xl bg-white px-5 text-sm font-medium text-[#17171a] transition-colors hover:bg-zinc-200"
+            >
+              Log in
+            </a>
+            <a
+              href="/auth/login?screen_hint=signup"
+              className="flex h-11 items-center justify-center rounded-xl border border-border px-5 text-sm font-medium text-foreground transition-colors hover:bg-white/[0.05]"
+            >
+              Sign up
+            </a>
+          </div>
         </div>
       </main>
     </div>

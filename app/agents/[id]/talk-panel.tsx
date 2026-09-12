@@ -13,6 +13,12 @@ type Status = "idle" | "connecting" | "live" | "error";
 
 type TranscriptLine = { id: string; role: "user" | "assistant"; text: string };
 
+type Source = { title: string; url: string; publishedDate?: string };
+
+type Activity =
+  | { kind: "notified"; text: string; taskUrl?: string }
+  | { kind: "lookup"; question: string; sources: Source[] };
+
 function MicIcon() {
   return (
     <svg
@@ -64,7 +70,7 @@ export function TalkPanel({ scannableId, name }: { scannableId: string; name: st
   const [error, setError] = useState<string | null>(null);
   const [speaking, setSpeaking] = useState(false);
   const [transcript, setTranscript] = useState<TranscriptLine[]>([]);
-  const [notified, setNotified] = useState(false);
+  const [activity, setActivity] = useState<Activity[]>([]);
   const sessionRef = useRef<RealtimeSession | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -85,7 +91,7 @@ export function TalkPanel({ scannableId, name }: { scannableId: string; name: st
     setError(null);
     setStatus("connecting");
     setTranscript([]);
-    setNotified(false);
+    setActivity([]);
 
     try {
       const response = await fetch("/api/realtime/session", {
@@ -118,16 +124,63 @@ export function TalkPanel({ scannableId, name }: { scannableId: string; name: st
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ scannableId, kind, summary, details: details ?? undefined }),
           });
-          const result = (await res.json()) as { ok: boolean; error?: string };
-          if (result.ok) setNotified(true);
-          return result.ok ? "The owner has been emailed." : `Could not email the owner: ${result.error}`;
+          const result = (await res.json()) as {
+            ok: boolean;
+            message?: string;
+            taskKey?: string;
+            taskUrl?: string;
+            error?: string;
+          };
+          if (result.ok) {
+            const text = result.message
+              ? result.message.charAt(0).toUpperCase() + result.message.slice(1)
+              : "Owner notified";
+            setActivity((prev) => [...prev, { kind: "notified", text, taskUrl: result.taskUrl }]);
+            return `Done — ${result.message ?? "the owner has been notified."} Tell the visitor this in one sentence.`;
+          }
+          return `Could not reach the owner: ${result.error ?? "unknown error"}. Tell the visitor to speak to a human directly.`;
+        },
+      });
+
+      const lookupProduct = tool({
+        name: "lookup_product",
+        description:
+          "Search the web for public information about the product/brand/model this object is, or about a product, model or serial number the visitor mentions: manuals, specs, how-to steps, error codes, compatible parts, recalls. Never for private/local facts (this building, owner, Wi-Fi, prices).",
+        parameters: z.object({
+          identifier: z
+            .string()
+            .nullable()
+            .describe("Most specific product identifier: model number, product name, or brand + model. Null if none."),
+          question: z.string().describe("What the visitor wants to know, as a short question."),
+        }),
+        execute: async ({ identifier, question }) => {
+          const res = await fetch("/api/lookup", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ scannableId, identifier: identifier ?? undefined, question }),
+          });
+          const result = (await res.json()) as
+            | { ok: true; answer: string; sources: Source[] }
+            | { ok: false; error: string };
+          if (!result.ok) {
+            return `Web lookup failed (${result.error}). Tell the visitor you could not check online right now.`;
+          }
+          setActivity((prev) => [...prev, { kind: "lookup", question, sources: result.sources }]);
+          const names = result.sources.slice(0, 2).map((s) => s.title).join(" and ");
+          return [
+            `Web answer: ${result.answer}`,
+            names ? `Sources: ${names}.` : "",
+            "Summarise this in your own words, say it comes from the web, and do not read out URLs.",
+          ]
+            .filter(Boolean)
+            .join("\n");
         },
       });
 
       const agent = new RealtimeAgent({
         name,
         instructions: data.instructions,
-        tools: [notifyAdmin],
+        tools: [notifyAdmin, lookupProduct],
       });
 
       const session = new RealtimeSession(agent, {
@@ -174,30 +227,30 @@ export function TalkPanel({ scannableId, name }: { scannableId: string; name: st
   const connecting = status === "connecting";
 
   return (
-    <main className="flex flex-1 flex-col items-center px-6 pb-[max(2rem,env(safe-area-inset-bottom))]">
+    <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col items-center px-5 pb-[max(2rem,env(safe-area-inset-bottom))]">
       <div className="flex flex-1 flex-col items-center justify-center">
         <button
           type="button"
           onClick={live ? stop : start}
           disabled={connecting}
           aria-label={live ? `Stop talking to ${name}` : `Talk to ${name}`}
-          className={`relative flex h-40 w-40 items-center justify-center rounded-full shadow-[0_20px_50px_rgba(0,0,0,0.18)] transition-all active:scale-95 disabled:cursor-wait ${
+          className={`relative flex h-36 w-36 items-center justify-center rounded-full transition-all active:scale-95 disabled:cursor-wait ${
             live
-              ? "bg-red-500 text-white"
-              : "bg-foreground text-background"
+              ? "bg-red-500 text-white shadow-[0_0_0_12px_rgba(239,68,68,0.12),0_20px_50px_rgba(0,0,0,0.35)]"
+              : "bg-white text-[#17171a] shadow-[0_0_0_12px_rgba(255,255,255,0.04),0_20px_50px_rgba(0,0,0,0.35)]"
           }`}
         >
           {(live || connecting) && (
             <span
               className={`absolute inset-0 rounded-full ${
-                live ? "bg-red-500/30" : "bg-foreground/20"
+                live ? "bg-red-500/30" : "bg-white/20"
               } ${speaking ? "animate-ping [animation-duration:1.2s]" : connecting ? "animate-pulse" : "animate-ping [animation-duration:2.4s]"}`}
             />
           )}
           <span className="relative">{live ? <StopIcon /> : <MicIcon />}</span>
         </button>
 
-        <p className="mt-8 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-8 text-sm text-muted">
           {connecting
             ? "Connecting…"
             : live
@@ -208,30 +261,85 @@ export function TalkPanel({ scannableId, name }: { scannableId: string; name: st
         </p>
 
         {error ? (
-          <p className="mt-2 max-w-xs text-center text-sm text-red-600 dark:text-red-400" role="alert">
+          <p className="mt-2 max-w-xs text-center text-sm text-red-400" role="alert">
             {error}
           </p>
         ) : null}
 
-        {notified ? (
-          <p className="mt-3 rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300">
-            Owner notified
-          </p>
+        {activity.length > 0 ? (
+          <ul className="mt-3 flex w-full max-w-sm flex-col items-center gap-2">
+            {activity.map((item, index) =>
+              item.kind === "notified" ? (
+                <li
+                  key={index}
+                  className="rounded-full bg-emerald-500/15 px-3 py-1 text-center text-xs font-medium text-emerald-300 ring-1 ring-emerald-500/20"
+                >
+                  {item.text}
+                  {item.taskUrl ? (
+                    <>
+                      {" "}
+                      <a
+                        href={item.taskUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="underline underline-offset-2 hover:text-emerald-200"
+                      >
+                        View task
+                      </a>
+                    </>
+                  ) : null}
+                </li>
+              ) : (
+                <li
+                  key={index}
+                  className="w-full rounded-2xl border border-sky-500/20 bg-sky-500/10 px-3 py-2 text-xs text-sky-100"
+                >
+                  <p className="font-medium">Looked up online: {item.question}</p>
+                  {item.sources.length > 0 ? (
+                    <p className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 opacity-80">
+                      {item.sources.map((source) => (
+                        <a
+                          key={source.url}
+                          href={source.url}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="underline underline-offset-2 hover:text-white"
+                        >
+                          {source.title}
+                        </a>
+                      ))}
+                    </p>
+                  ) : null}
+                </li>
+              ),
+            )}
+          </ul>
         ) : null}
       </div>
 
       {transcript.length > 0 ? (
         <div
           ref={scrollRef}
-          className="mt-4 max-h-44 w-full overflow-y-auto rounded-2xl border border-black/[.08] p-3 text-sm dark:border-white/[.145]"
+          className="mt-4 max-h-52 w-full space-y-2 overflow-y-auto rounded-2xl border border-border bg-surface p-3"
         >
           {transcript.map((line) => (
-            <p key={line.id} className="mb-1.5 last:mb-0">
-              <span className="font-medium text-zinc-500">
-                {line.role === "user" ? "You" : name}:
-              </span>{" "}
-              <span className="text-zinc-800 dark:text-zinc-200">{line.text}</span>
-            </p>
+            <div
+              key={line.id}
+              className={`flex ${line.role === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <p
+                className={`max-w-[85%] rounded-2xl px-3 py-2 text-sm leading-6 ${
+                  line.role === "user"
+                    ? "bg-white/[0.08] text-foreground"
+                    : "bg-surface-2 text-zinc-200 ring-1 ring-white/6"
+                }`}
+              >
+                <span className="mb-0.5 block text-[11px] font-medium uppercase tracking-[0.12em] text-muted">
+                  {line.role === "user" ? "You" : name}
+                </span>
+                {line.text}
+              </p>
+            </div>
           ))}
         </div>
       ) : null}

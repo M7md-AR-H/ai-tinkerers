@@ -18,18 +18,39 @@ export function DeleteScannableDialog({
   ownerId: Id<"users">;
   onClose: () => void;
 }) {
+  if (!open) {
+    return null;
+  }
+
+  // Mounts fresh each time the dialog opens, so error/submitting state resets
+  // without needing an effect.
+  return (
+    <DeleteScannableForm
+      name={name}
+      scannableId={scannableId}
+      ownerId={ownerId}
+      onClose={onClose}
+    />
+  );
+}
+
+function DeleteScannableForm({
+  name,
+  scannableId,
+  ownerId,
+  onClose,
+}: {
+  name: string;
+  scannableId: Id<"scannables">;
+  ownerId: Id<"users">;
+  onClose: () => void;
+}) {
   const titleId = useId();
   const removeScannable = useMutation(api.scannables.remove);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
-    if (!open) {
-      setError(null);
-      setSubmitting(false);
-      return;
-    }
-
     function onKeyDown(event: KeyboardEvent) {
       if (event.key === "Escape" && !submitting) {
         onClose();
@@ -38,11 +59,7 @@ export function DeleteScannableDialog({
 
     window.addEventListener("keydown", onKeyDown);
     return () => window.removeEventListener("keydown", onKeyDown);
-  }, [open, onClose, submitting]);
-
-  if (!open) {
-    return null;
-  }
+  }, [onClose, submitting]);
 
   async function handleDelete() {
     setError(null);
@@ -64,7 +81,7 @@ export function DeleteScannableDialog({
       <button
         type="button"
         aria-label="Close dialog"
-        className="absolute inset-0 bg-black/40"
+        className="absolute inset-0 bg-black/60"
         disabled={submitting}
         onClick={onClose}
       />
@@ -72,16 +89,16 @@ export function DeleteScannableDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 w-full max-w-sm rounded-2xl border border-black/[.08] bg-white p-6 shadow-xl dark:border-white/[.145] dark:bg-zinc-950"
+        className="relative z-10 w-full max-w-sm rounded-2xl border border-border bg-surface p-6 shadow-[0_24px_80px_rgba(0,0,0,0.5)]"
       >
         <h2 id={titleId} className="text-lg font-semibold tracking-tight">
           Are you sure?
         </h2>
-        <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">
+        <p className="mt-2 text-sm text-muted">
           This will permanently delete {name} and its knowledge file.
         </p>
         {error ? (
-          <p className="mt-3 text-sm text-red-600 dark:text-red-400" role="alert">
+          <p className="mt-3 text-sm text-red-400" role="alert">
             {error}
           </p>
         ) : null}
@@ -90,7 +107,7 @@ export function DeleteScannableDialog({
             type="button"
             onClick={onClose}
             disabled={submitting}
-            className="h-10 rounded-full px-4 text-sm font-medium hover:bg-black/[.04] disabled:opacity-50 dark:hover:bg-white/[.06]"
+            className="h-10 rounded-xl px-4 text-sm font-medium text-muted hover:bg-white/[0.06] hover:text-foreground disabled:opacity-50"
           >
             Cancel
           </button>
@@ -98,7 +115,7 @@ export function DeleteScannableDialog({
             type="button"
             onClick={handleDelete}
             disabled={submitting}
-            className="h-10 rounded-full bg-red-600 px-4 text-sm font-medium text-white disabled:opacity-50 dark:bg-red-500"
+            className="h-10 rounded-xl bg-red-600 px-4 text-sm font-medium text-white disabled:opacity-50"
           >
             {submitting ? "Deleting…" : "Delete"}
           </button>

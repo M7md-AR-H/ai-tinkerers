@@ -11,6 +11,7 @@ import {
 } from "./create-scannable-dialog";
 import { DeleteScannableDialog } from "./delete-scannable-dialog";
 import { ShareScannableDialog } from "./share-scannable-dialog";
+import { AppHeader } from "../components/brand";
 import { UserIcon } from "./user-icon";
 
 function PlusIcon() {
@@ -22,7 +23,7 @@ function PlusIcon() {
       strokeWidth="2"
       strokeLinecap="round"
       aria-hidden="true"
-      className="h-5 w-5"
+      className="h-4 w-4"
     >
       <path d="M12 5v14M5 12h14" />
     </svg>
@@ -130,7 +131,7 @@ function ScannableRowMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         onClick={toggle}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-zinc-600 hover:bg-black/[.04] dark:text-zinc-300 dark:hover:bg-white/[.06]"
+        className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-muted transition-colors hover:bg-white/[0.06] hover:text-foreground"
       >
         <MoreIcon />
       </button>
@@ -138,7 +139,7 @@ function ScannableRowMenu({
         <div
           ref={menuRef}
           role="menu"
-          className="fixed z-40 min-w-40 rounded-xl border border-black/[.08] bg-white py-1 shadow-lg dark:border-white/[.145] dark:bg-zinc-950"
+          className="fixed z-40 min-w-40 rounded-xl border border-border bg-surface-2 py-1 shadow-[0_16px_48px_rgba(0,0,0,0.45)]"
           style={{ top: coords.top, left: coords.left }}
         >
           <button
@@ -148,7 +149,7 @@ function ScannableRowMenu({
               close();
               onEdit();
             }}
-            className="block w-full px-3 py-2 text-left text-sm hover:bg-black/[.04] dark:hover:bg-white/[.06]"
+            className="block w-full px-3 py-2 text-left text-sm hover:bg-white/[0.06]"
           >
             Edit
           </button>
@@ -159,7 +160,7 @@ function ScannableRowMenu({
               close();
               onShare();
             }}
-            className="block w-full px-3 py-2 text-left text-sm hover:bg-black/[.04] dark:hover:bg-white/[.06]"
+            className="block w-full px-3 py-2 text-left text-sm hover:bg-white/[0.06]"
           >
             Share
           </button>
@@ -170,7 +171,7 @@ function ScannableRowMenu({
               close();
               onDelete();
             }}
-            className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-black/[.04] dark:text-red-400 dark:hover:bg-white/[.06]"
+            className="block w-full px-3 py-2 text-left text-sm text-red-400 hover:bg-white/[0.06]"
           >
             Delete
           </button>
@@ -220,103 +221,114 @@ export function DashboardClient({
 
   return (
     <div className="flex flex-1 flex-col">
-      <header className="flex items-center justify-between gap-4 px-6 py-5">
-        <div>
-          <h1 className="text-xl font-semibold tracking-tight">Agents</h1>
-          <p className="text-sm text-zinc-600 dark:text-zinc-400">
+      <AppHeader
+        trailing={
+          <>
+            <button
+              type="button"
+              aria-label="Create a scannable"
+              onClick={openCreate}
+              className="inline-flex h-9 items-center gap-1.5 rounded-xl bg-white px-3 text-sm font-medium text-[#17171a] transition-colors hover:bg-zinc-200"
+            >
+              <PlusIcon />
+              <span className="hidden sm:inline">New agent</span>
+            </button>
+            <UserIcon user={user} />
+          </>
+        }
+      />
+
+      <main className="mx-auto w-full max-w-6xl px-4 py-8 sm:px-6">
+        <div className="mb-6">
+          <h1 className="text-2xl font-semibold tracking-tight">Agents</h1>
+          <p className="mt-1 text-sm text-muted">
             Scannable objects tagged to your account
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          <button
-            type="button"
-            aria-label="Create a scannable"
-            onClick={openCreate}
-            className="flex h-10 w-10 items-center justify-center rounded-full border border-black/[.08] hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-white/[.06]"
-          >
-            <PlusIcon />
-          </button>
-          <UserIcon user={user} />
-        </div>
-      </header>
-
-      <main className="px-6 pb-10">
         {scannables === undefined ? (
-          <p className="text-sm text-zinc-500">Loading agents…</p>
+          <p className="text-sm text-muted">Loading agents…</p>
         ) : scannables.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-black/[.08] px-6 py-12 text-center dark:border-white/[.145]">
-            <p className="text-sm text-zinc-600 dark:text-zinc-400">
-              No agents yet. Use + to create your first scannable.
+          <div className="rounded-2xl border border-dashed border-border bg-surface/60 px-6 py-16 text-center">
+            <p className="text-sm text-muted">
+              No agents yet. Use New agent to create your first scannable.
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-2xl border border-black/[.08] dark:border-white/[.145]">
-            <table className="w-full min-w-[36rem] text-left text-sm">
-              <thead className="border-b border-black/[.08] bg-zinc-50 text-zinc-600 dark:border-white/[.145] dark:bg-zinc-900 dark:text-zinc-400">
-                <tr>
-                  <th className="px-4 py-3 font-medium">Name</th>
-                  <th className="px-4 py-3 font-medium">Knowledge</th>
-                  <th className="px-4 py-3 font-medium">Created</th>
-                  <th className="w-14 px-4 py-3">
-                    <span className="sr-only">Actions</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {scannables.map((scannable) => (
-                  <tr
-                    key={scannable._id}
-                    className="border-b border-black/[.06] last:border-0 dark:border-white/[.08]"
-                  >
-                    <td className="px-4 py-3 font-medium">{scannable.name}</td>
-                    <td className="px-4 py-3">
-                      {scannable.knowledgeFileUrl ? (
-                        <a
-                          href={scannable.knowledgeFileUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="text-zinc-700 underline underline-offset-2 hover:text-foreground dark:text-zinc-300"
-                        >
-                          {scannable.knowledgeFileName}
-                        </a>
-                      ) : (
-                        <span className="text-zinc-500">
-                          {scannable.knowledgeFileName || "No file"}
-                        </span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-zinc-600 dark:text-zinc-400">
-                      {new Date(scannable._creationTime).toLocaleString()}
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <ScannableRowMenu
-                        name={scannable.name}
-                        onEdit={() => {
-                          setEditTarget({
-                            id: scannable._id,
-                            name: scannable.name,
-                            knowledgeFileName: scannable.knowledgeFileName,
-                          });
-                          setDialogOpen(true);
-                        }}
-                        onShare={() =>
-                          setShareTarget({
-                            id: scannable._id,
-                            name: scannable.name,
-                          })
-                        }
-                        onDelete={() =>
-                          setDeleteTarget({
-                            id: scannable._id,
-                            name: scannable.name,
-                          })
-                        }
-                      />
-                    </td>
+          <div className="overflow-hidden rounded-2xl border border-white/[0.1] bg-[#1f1f23] shadow-[0_16px_48px_rgba(0,0,0,0.28)]">
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[36rem] text-left text-sm">
+                <thead>
+                  <tr className="border-b border-border bg-white/[0.03]">
+                    <th className="px-5 py-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+                      Name
+                    </th>
+                    <th className="px-5 py-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+                      Knowledge
+                    </th>
+                    <th className="px-5 py-3 text-[11px] font-medium uppercase tracking-[0.14em] text-muted">
+                      Created
+                    </th>
+                    <th className="w-14 px-5 py-3">
+                      <span className="sr-only">Actions</span>
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {scannables.map((scannable) => (
+                    <tr
+                      key={scannable._id}
+                      className="border-b border-border last:border-0 transition-colors hover:bg-white/[0.03]"
+                    >
+                      <td className="px-5 py-4 font-medium">{scannable.name}</td>
+                      <td className="px-5 py-4">
+                        {scannable.knowledgeFileUrl ? (
+                          <a
+                            href={scannable.knowledgeFileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex max-w-56 truncate rounded-lg bg-white/[0.05] px-2.5 py-1 text-xs text-zinc-200 ring-1 ring-white/8 hover:bg-white/[0.08]"
+                          >
+                            {scannable.knowledgeFileName}
+                          </a>
+                        ) : (
+                          <span className="text-muted">
+                            {scannable.knowledgeFileName || "No file"}
+                          </span>
+                        )}
+                      </td>
+                      <td className="px-5 py-4 tabular-nums text-muted">
+                        {new Date(scannable._creationTime).toLocaleString()}
+                      </td>
+                      <td className="px-5 py-4 text-right">
+                        <ScannableRowMenu
+                          name={scannable.name}
+                          onEdit={() => {
+                            setEditTarget({
+                              id: scannable._id,
+                              name: scannable.name,
+                              knowledgeFileName: scannable.knowledgeFileName,
+                            });
+                            setDialogOpen(true);
+                          }}
+                          onShare={() =>
+                            setShareTarget({
+                              id: scannable._id,
+                              name: scannable.name,
+                            })
+                          }
+                          onDelete={() =>
+                            setDeleteTarget({
+                              id: scannable._id,
+                              name: scannable.name,
+                            })
+                          }
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         )}
       </main>

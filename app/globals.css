@@ -1,28 +1,39 @@
 @import "tailwindcss";
 
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #17171a;
+  --foreground: #f4f4f5;
+  --surface: #1c1c20;
+  --surface-2: #242428;
+  --muted: #9a9aa3;
+  --border: rgba(255, 255, 255, 0.08);
+  --ring: rgba(255, 255, 255, 0.18);
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+html {
+  color-scheme: dark;
 }
 
 body {
-  background: var(--background);
+  background-color: var(--background);
+  background-image:
+    radial-gradient(980px 520px at 50% -12%, rgba(255, 255, 255, 0.055), transparent 52%),
+    radial-gradient(640px 360px at 100% 110%, rgba(255, 255, 255, 0.03), transparent 48%);
+  background-attachment: fixed;
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 /* Let the CopilotKit chat fill the agent page column. */
@@ -30,4 +41,28 @@ body {
   flex: 1 1 auto;
   min-height: 0;
   height: 100%;
+}
+
+.agent-chat [data-copilotkit] {
+  --background: #17171a;
+  --foreground: #f4f4f5;
+  --card: #1c1c20;
+  --card-foreground: #f4f4f5;
+  --popover: #242428;
+  --popover-foreground: #f4f4f5;
+  --primary: #f4f4f5;
+  --primary-foreground: #17171a;
+  --secondary: #242428;
+  --secondary-foreground: #f4f4f5;
+  --muted: #242428;
+  --muted-foreground: #9a9aa3;
+  --accent: #2a2a2f;
+  --accent-foreground: #f4f4f5;
+  --border: rgba(255, 255, 255, 0.08);
+  --input: rgba(255, 255, 255, 0.08);
+  --ring: rgba(255, 255, 255, 0.2);
+}
+
+.agent-chat [data-copilotkit] {
+  background: transparent;
 }

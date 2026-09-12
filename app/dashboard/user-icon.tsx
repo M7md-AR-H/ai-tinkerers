@@ -19,7 +19,7 @@ export function UserIcon({ user }: { user: User }) {
     <details className="relative">
       <summary
         aria-label={label}
-        className="flex h-10 w-10 cursor-pointer list-none items-center justify-center overflow-hidden rounded-full bg-zinc-200 text-sm font-medium text-zinc-700 outline-none ring-zinc-400 marker:hidden [&::-webkit-details-marker]:hidden dark:bg-zinc-800 dark:text-zinc-200"
+        className="flex h-9 w-9 cursor-pointer list-none items-center justify-center overflow-hidden rounded-full bg-surface-2 text-xs font-medium text-foreground outline-none ring-1 ring-white/10 marker:hidden [&::-webkit-details-marker]:hidden"
       >
         {user.picture ? (
           // Auth0 avatars can come from many identity providers.
@@ -34,13 +34,11 @@ export function UserIcon({ user }: { user: User }) {
           <span>{initials}</span>
         )}
       </summary>
-      <div className="absolute right-0 mt-2 min-w-40 rounded-xl border border-black/[.08] bg-white p-2 shadow-lg dark:border-white/[.145] dark:bg-zinc-950">
-        <p className="truncate px-2 py-1.5 text-sm text-zinc-600 dark:text-zinc-400">
-          {label}
-        </p>
+      <div className="absolute right-0 mt-2 min-w-44 rounded-xl border border-border bg-surface-2 p-1.5 shadow-[0_16px_48px_rgba(0,0,0,0.45)]">
+        <p className="truncate px-2.5 py-2 text-xs text-muted">{label}</p>
         <a
           href="/auth/logout"
-          className="block rounded-lg px-2 py-1.5 text-sm font-medium hover:bg-black/[.04] dark:hover:bg-white/[.06]"
+          className="block rounded-lg px-2.5 py-2 text-sm font-medium hover:bg-white/[0.06]"
         >
           Log out
         </a>
