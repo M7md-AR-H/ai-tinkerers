@@ -24,3 +24,10 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+/* Let the CopilotKit chat fill the agent page column. */
+.agent-chat > * {
+  flex: 1 1 auto;
+  min-height: 0;
+  height: 100%;
+}
