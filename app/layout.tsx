@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Every Object Gets an Agent",
+  title: "Scannable",
   description: "Scan a QR code and talk to the object. It remembers, emails from its own inbox, and books its own maintenance.",
 };
 

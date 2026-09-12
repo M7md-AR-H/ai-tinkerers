@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import type { ScannableRow } from "@/lib/convex-server";
 import Modal from "./modal";
 import { deleteScannable } from "./actions";
+import { Spinner, TrashIcon } from "./icons";
+import { btnDanger, btnGhost } from "./ui";
 
 export default function DeleteScannableDialog({ target, onClose }: { target: ScannableRow | null; onClose: () => void }) {
   const router = useRouter();
@@ -23,22 +25,15 @@ export default function DeleteScannableDialog({ target, onClose }: { target: Sca
   }
 
   return (
-    <Modal title="Delete scannable" onClose={onClose}>
-      <p className="text-sm text-zinc-600">
-        Delete <span className="font-medium text-zinc-900">{target.name}</span> and its knowledge file? Printed QR codes
-        for it will stop working.
-      </p>
-      {error && <p className="mt-3 text-sm text-red-600">{error}</p>}
-      <div className="mt-5 flex justify-end gap-2">
-        <button onClick={onClose} className="rounded-md px-3 py-2 text-sm hover:bg-zinc-100">
+    <Modal title={`Delete ${target.name}?`} description="Its knowledge file is deleted too, and printed QR codes for it will stop working." onClose={onClose}>
+      {error && <p className="mb-4 rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-700">{error}</p>}
+      <div className="flex justify-end gap-2">
+        <button onClick={onClose} className={btnGhost}>
           Cancel
         </button>
-        <button
-          onClick={confirm}
-          disabled={busy}
-          className="rounded-md bg-red-600 px-3 py-2 text-sm text-white disabled:opacity-50"
-        >
-          {busy ? "Deleting…" : "Delete"}
+        <button onClick={confirm} disabled={busy} className={btnDanger}>
+          {busy ? <Spinner /> : <TrashIcon className="h-4 w-4" />}
+          {busy ? "Deleting…" : "Delete agent"}
         </button>
       </div>
     </Modal>

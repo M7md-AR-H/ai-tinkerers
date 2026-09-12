@@ -1,4 +1,4 @@
-# Every Object Gets an Agent
+# Scannable
 
 **Stick a QR code on any physical thing and it becomes an agent with its own memory, its own inbox, and its own authority to act.**
 

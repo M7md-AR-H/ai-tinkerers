@@ -12,6 +12,7 @@ export default async function Home() {
   return (
     <main className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center gap-8 px-6 py-16">
       <div className="flex flex-col gap-3">
+        <p className="text-sm font-semibold uppercase tracking-widest text-indigo-600">Scannable</p>
         <h1 className="text-3xl font-semibold tracking-tight">Every object gets an agent.</h1>
         <p className="text-zinc-600">
           Stick a QR code on any physical thing and it becomes an agent with its own memory, its own inbox, and its

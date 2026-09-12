@@ -1,4 +1,4 @@
-# Project guide: how Every Object Gets an Agent works
+# Project guide: how Scannable works
 
 What the app is, what each part of the code does, and how a request flows through it. For accounts, keys and testing, see [DEV_SETUP.md](DEV_SETUP.md). For the judges' summary, see [README.md](README.md).
 

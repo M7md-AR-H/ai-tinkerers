@@ -90,6 +90,13 @@ export default async function AgentPage({ params }: { params: Promise<{ id: stri
       )}
 
       {ctx.kind === "object" && <AutoRefresh seconds={5} />}
+
+      <footer className="mt-auto pt-6 text-center text-xs text-zinc-400">
+        Powered by{" "}
+        <Link href="/" className="font-medium text-zinc-500 hover:underline">
+          Scannable
+        </Link>
+      </footer>
     </main>
   );
 }

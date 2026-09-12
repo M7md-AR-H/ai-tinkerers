@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import type { ScannableRow } from "@/lib/convex-server";
 import Modal from "./modal";
 import { createScannable, getUploadUrl, updateScannable, type FileInput } from "./actions";
+import { CameraIcon, FileIcon, Spinner, UploadIcon } from "./icons";
+import { btnGhost, btnPrimary, inputBase } from "./ui";
 
 const MAX_TEXT = 400_000;
 
@@ -22,6 +24,42 @@ async function uploadKnowledge(file: File): Promise<FileInput> {
   if (!res.ok) throw new Error("Upload failed.");
   const { storageId } = (await res.json()) as { storageId: string };
   return { fileId: storageId, fileName: file.name, contentType, ...(text !== undefined ? { text } : {}) };
+}
+
+function FileDrop({ file, onFile }: { file: File | null; onFile: (f: File | null) => void }) {
+  const [over, setOver] = useState(false);
+  return (
+    <label
+      onDragOver={(e) => {
+        e.preventDefault();
+        setOver(true);
+      }}
+      onDragLeave={() => setOver(false)}
+      onDrop={(e) => {
+        e.preventDefault();
+        setOver(false);
+        onFile(e.dataTransfer.files?.[0] ?? null);
+      }}
+      className={`flex cursor-pointer flex-col items-center justify-center gap-1.5 rounded-2xl border-2 border-dashed px-4 py-7 text-center transition ${
+        over ? "border-indigo-400 bg-indigo-50" : "border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50"
+      }`}
+    >
+      <input type="file" accept=".txt,.md,.pdf" className="sr-only" onChange={(e) => onFile(e.target.files?.[0] ?? null)} />
+      {file ? (
+        <>
+          <FileIcon className="h-7 w-7 text-indigo-600" />
+          <span className="text-sm font-medium">{file.name}</span>
+          <span className="text-xs text-zinc-500">{(file.size / 1024).toFixed(1)} KB · click to change</span>
+        </>
+      ) : (
+        <>
+          <UploadIcon className="h-7 w-7 text-zinc-400" />
+          <span className="text-sm font-medium">Drop a file here, or click to choose</span>
+          <span className="text-xs text-zinc-500">.txt and .md are read by the agent · .pdf is stored only</span>
+        </>
+      )}
+    </label>
+  );
 }
 
 export default function CreateScannableDialog({
@@ -50,7 +88,7 @@ export default function CreateScannableDialog({
     e.preventDefault();
     setError(null);
     if (!name.trim()) return setError("Give it a name.");
-    if (!editing && !file) return setError("Attach a knowledge file (.txt, .md or .pdf).");
+    if (!editing && !file) return setError("Add a knowledge file (.txt, .md or .pdf).");
     if (editing && hasFile && mode === "replace" && !file) return setError("Choose the new file, or keep the current one.");
 
     setBusy(true);
@@ -74,53 +112,68 @@ export default function CreateScannableDialog({
     }
   }
 
+  const modeLabel = { keep: "Keep", replace: "Replace", clear: "Remove" } as const;
+
   return (
-    <Modal title={editing ? "Edit scannable" : "New scannable"} onClose={onClose}>
-      <form onSubmit={submit} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1 text-sm">
+    <Modal
+      title={editing ? `Edit ${editing.name}` : "New agent from a file"}
+      description={editing ? undefined : "Give it a name and a file describing it. The agent answers only from that file."}
+      onClose={onClose}
+    >
+      <form onSubmit={submit} className="flex flex-col gap-5">
+        <label className="flex flex-col gap-1.5 text-sm">
           <span className="font-medium">Name</span>
-          <input
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="e.g. Lobby Printer"
-            className="rounded-md border border-zinc-300 px-3 py-2"
-            autoFocus
-          />
+          <input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Lobby Printer" className={inputBase} autoFocus />
         </label>
 
         <div className="flex flex-col gap-2 text-sm">
           <span className="font-medium">Knowledge file</span>
           {editing && hasFile && (
-            <div className="flex flex-wrap gap-x-4 gap-y-1">
+            <div className="grid grid-cols-3 gap-1 rounded-xl bg-zinc-100 p-1">
               {(["keep", "replace", "clear"] as const).map((m) => (
-                <label key={m} className="flex items-center gap-1.5">
-                  <input type="radio" checked={mode === m} onChange={() => setMode(m)} />
-                  {m === "keep" ? `Keep ${editing.knowledgeFileName}` : m === "replace" ? "Replace" : "Remove"}
-                </label>
+                <button
+                  type="button"
+                  key={m}
+                  onClick={() => setMode(m)}
+                  className={`rounded-lg px-2 py-1.5 font-medium transition ${mode === m ? "bg-white shadow-sm" : "text-zinc-500 hover:text-zinc-800"}`}
+                >
+                  {modeLabel[m]}
+                </button>
               ))}
             </div>
           )}
-          {showPicker && (
-            <input type="file" accept=".txt,.md,.pdf" onChange={(e) => setFile(e.target.files?.[0] ?? null)} />
+          {editing && hasFile && mode === "keep" && (
+            <p className="flex items-center gap-2 rounded-xl bg-zinc-50 px-3 py-2.5 text-zinc-600">
+              <FileIcon className="h-4 w-4 text-zinc-400" />
+              {editing.knowledgeFileName}
+            </p>
           )}
-          <p className="text-xs text-zinc-500">The agent reads .txt and .md files. PDFs are stored but not read yet.</p>
+          {editing && hasFile && mode === "clear" && (
+            <p className="rounded-xl bg-amber-50 px-3 py-2.5 text-amber-800">The agent will have no knowledge until you add a file again.</p>
+          )}
+          {showPicker && <FileDrop file={file} onFile={setFile} />}
         </div>
 
-        {!editing && onUsePhoto && (
-          <button type="button" onClick={onUsePhoto} className="self-start text-sm text-blue-700 hover:underline">
-            No file? Start from a photo instead
-          </button>
-        )}
+        {error && <p className="rounded-xl bg-red-50 px-3 py-2.5 text-sm text-red-700">{error}</p>}
 
-        {error && <p className="text-sm text-red-600">{error}</p>}
-
-        <div className="flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-md px-3 py-2 text-sm hover:bg-zinc-100">
-            Cancel
-          </button>
-          <button disabled={busy} className="rounded-md bg-zinc-900 px-3 py-2 text-sm text-white disabled:opacity-50">
-            {busy ? "Saving…" : editing ? "Save" : "Create"}
-          </button>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          {!editing && onUsePhoto ? (
+            <button type="button" onClick={onUsePhoto} className="inline-flex items-center gap-1.5 text-sm font-medium text-indigo-700 hover:underline">
+              <CameraIcon className="h-4 w-4" />
+              No file? Use a photo
+            </button>
+          ) : (
+            <span />
+          )}
+          <div className="flex gap-2">
+            <button type="button" onClick={onClose} className={btnGhost}>
+              Cancel
+            </button>
+            <button disabled={busy} className={btnPrimary}>
+              {busy && <Spinner />}
+              {busy ? "Saving…" : editing ? "Save changes" : "Create agent"}
+            </button>
+          </div>
         </div>
       </form>
     </Modal>

@@ -1,4 +1,4 @@
-# Dev setup manual
+# Scannable: dev setup manual
 
 Everything you need to set up outside the code, then the order to test in. Commands are PowerShell, run from the project root.
 
